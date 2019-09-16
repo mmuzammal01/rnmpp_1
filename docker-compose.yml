@@ -1,0 +1,91 @@
+version: '3.3'
+
+networks:
+  default:
+    external:
+      name: rnmpp
+
+services:
+
+  nginx:
+    container_name: rnmpp_nginx
+    build:
+      context: ./
+      dockerfile: docker/nginx/Dockerfile
+    restart: "no"
+    ports:
+      - "8081:80"
+    volumes:
+      - ./app:/app
+    depends_on:
+      - php
+      - mysql
+      - redis
+      - postgres
+    networks:
+      - default
+
+  php:
+    container_name: rnmpp_php
+    ports:
+      - "9000"
+      - "9001"
+    build:
+      context: ./
+      dockerfile: docker/php/Dockerfile
+    volumes:
+      - ./app:/app
+    working_dir: /app
+    command: /docker/init.sh
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - default
+
+  mysql:
+    container_name: rnmpp_mysql
+    image: mysql:5.7
+    volumes:
+      - ./.data/mysql/datadir:/var/lib/mysql
+    ports:
+      - "3309:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_USER: rnmpp
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: rnmpp
+    networks:
+      - default
+
+  postgres:
+    container_name: rnmpp_postgres
+    image: postgres
+    volumes:
+      - ./.data/postgresql/datadir:/var/lib/postgresql
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: rnmpp
+      POSTGRES_DB: rnmpp
+    networks:
+      - default
+
+  redis:
+    image: redis:alpine
+    container_name: rnmpp_redis
+    ports:
+      - "6379"
+    labels:
+      - "traefik.enable=false"
+
+  portainer:
+    container_name: rnmpp-portainer
+    image: portainer/portainer
+    volumes:
+      - ./.data:/data
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --admin-password "$$2y$$05$$arC5e4UbRPxfR68jaFnAAe1aL7C1U03pqfyQh49/9lB9lqFxLfBqS"
+    ports:
+      - "8888:9000"

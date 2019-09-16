@@ -1,0 +1,8 @@
+#php_admin_flag register_globals on
+
+Options +FollowSymlinks
+RewriteEngine On
+
+#No permite listar directorios
+Options -Indexes
+
